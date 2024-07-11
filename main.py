@@ -3,8 +3,11 @@ import os
 import subprocess
 import threading
 import queue
+from cgitb import text
+
 from PySide6 import QtWidgets
-from PySide6.QtWidgets import QAbstractItemView, QAbstractScrollArea, QApplication, QHeaderView, QSizePolicy, QTableWidget, QWidget, QFileDialog, QTableWidgetItem, QMenu, QMessageBox
+from PySide6.QtWidgets import QAbstractItemView, QAbstractScrollArea, QApplication, QHeaderView, QSizePolicy, \
+    QTableWidget, QWidget, QFileDialog, QTableWidgetItem, QMenu, QMessageBox
 from PySide6.QtCore import Qt, Signal, Slot
 from ui_main_form import Ui_Form
 
@@ -64,22 +67,49 @@ class MainWidget(QWidget):
             QAbstractItemView.EditTrigger.NoEditTriggers)
         self.ui.result_table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows)
-        
+
         self.ui.result_table.doubleClicked.connect(self.open_file)
         self.results_ready.connect(self.update_table)
         self.result_queue = queue.Queue()
-        
+
 
     def browse_directory(self):
         initial_dir = self.ui.base_path_edit.text()
-        if not os.path.isdir(initial_dir):
-            initial_dir = os.path.expanduser("~")
         dir_path = QFileDialog.getExistingDirectory(
             self, "Select Directory", initial_dir)
         if dir_path:
             dir_path = dir_path.replace('/', '\\')
             self.ui.base_path_edit.setText(dir_path)
+    def generate_command_aslist(self):
+        search_string = self.ui.search_string_edit.text()
+        base_dir = self.ui.base_path_edit.text()
+        file_filter = self.ui.filefilter_edit.text()
+        recursive = self.ui.recursive_checkbox.isChecked()
+        ignore_case = self.ui.ignore_case_checkbox.isChecked()
+        skip_binary = self.ui.skip_binary_checkbox.isChecked()
+        regex = self.ui.regex_checkbox.isChecked()
 
+        if not search_string or not base_dir:
+            QMessageBox.critical(
+                self, "Error", "Please provide all necessary inputs.")
+            return []
+
+        cmd = ['rg']
+        cmd.append('--line-number')
+        if file_filter:
+            cmd.append('-g')
+            cmd.append(f'{file_filter}')
+        if not recursive:
+            cmd.append('--max-depth=1')
+        if not skip_binary:
+            cmd.append('--binary')
+        if ignore_case:
+            cmd.append('-i')
+        if not regex:
+            cmd.append('--fixed-strings')
+        cmd.append(f'{search_string}')
+        cmd.append(f'{base_dir}')
+        return cmd
     def generate_command(self):
         search_string = self.ui.search_string_edit.text()
         base_dir = self.ui.base_path_edit.text()
@@ -122,41 +152,51 @@ class MainWidget(QWidget):
     def search_files(self, command):
         try:
             result = subprocess.run(
-                command, capture_output=True, text=True, shell=True, encoding='utf-8'
+                command,
+                encoding='utf-8',
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True
             )
             if result.stdout:
                 self.result_queue.put(result.stdout.splitlines())
                 return
             if result.stderr:
-                QMessageBox.critical(self, "Error", result.stderr)
+                QMessageBox.critical(self, "Error",result.stderr)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
         self.result_queue.put([])
 
     def update_table(self, results):
         self.ui.result_table.setRowCount(0)
-        count = 0
-        for index, line in enumerate(results):
-            result_line = ResultLine(line)
-            row_position = self.ui.result_table.rowCount()
-            self.ui.result_table.insertRow(row_position)
-            self.ui.result_table.setItem(
-                row_position, 0, QTableWidgetItem(result_line.path))
-            self.ui.result_table.setItem(
-                row_position, 1, QTableWidgetItem(result_line.file_name))
-            self.ui.result_table.setItem(
-                row_position, 2, QTableWidgetItem(result_line.line))
-            self.ui.result_table.setItem(
-                row_position, 3, QTableWidgetItem(result_line.contents))
-            count += 1
+        for line in results:
+            self.insert_row_into_table(line)
         # self.ui.result_table.resizeColumnsToContents()
-        self.ui.total_label.setText(f'Total match: {count}')
+        self.ui.total_label.setText(f'Total match: {self.ui.result_table.rowCount()}')
         self.ui.progressBar.setRange(0, 100)
         self.ui.progressBar.setValue(100)
 
+    def insert_row_into_table(self, line):
+        result_line = ResultLine(line)
+        row_position = self.ui.result_table.rowCount()
+        self.ui.result_table.insertRow(row_position)
+        pathItem = QTableWidgetItem(result_line.path)
+        pathItem.setToolTip(result_line.path)
+        self.ui.result_table.setItem(
+            row_position, 0, pathItem)
+        self.ui.result_table.setItem(
+            row_position, 1, QTableWidgetItem(result_line.file_name))
+        self.ui.result_table.setItem(
+            row_position, 2, QTableWidgetItem(result_line.line))
+        contentsItem = QTableWidgetItem(result_line.contents)
+        contentsItem.setToolTip(result_line.contents)
+        self.ui.result_table.setItem(
+            row_position, 3, contentsItem)
+
     def threaded_search(self):
-        command = self.generate_command()
-        if command == '':
+        command = self.generate_command_aslist()
+        if command == []:
             return
         self.ui.progressBar.setValue(0)
         self.ui.progressBar.setRange(0, 0)
@@ -170,7 +210,7 @@ class MainWidget(QWidget):
 
     def open_file(self):
         current_row = self.ui.result_table.currentRow()
-        if current_row>-1:
+        if current_row > -1:
             path = self.ui.result_table.item(current_row, 0).text()
             file_name = self.ui.result_table.item(current_row, 1).text()
             file_path = os.path.join(path, file_name)
@@ -179,7 +219,7 @@ class MainWidget(QWidget):
 
     def show_in_explorer(self):
         current_row = self.ui.result_table.currentRow()
-        if current_row>-1:
+        if current_row > -1:
             path = self.ui.result_table.item(current_row, 0).text()
             file_name = self.ui.result_table.item(current_row, 1).text()
             file_path = os.path.join(path, file_name)
@@ -189,13 +229,12 @@ class MainWidget(QWidget):
 
     def copy_file_path(self):
         current_row = self.ui.result_table.currentRow()
-        if current_row>-1:
+        if current_row > -1:
             path = self.ui.result_table.item(current_row, 0).text()
             file_name = self.ui.result_table.item(current_row, 1).text()
             file_path = os.path.join(path, file_name)
             QApplication.clipboard().setText(file_path)
             QMessageBox.information(self, "Copied", f"File path copied to clipboard:\n{file_path}")
-
 
     def show_context_menu(self, pos):
         context_menu = QMenu(self)

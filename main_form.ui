@@ -225,5 +225,22 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>search_string_edit</sender>
+   <signal>editingFinished()</signal>
+   <receiver>search_btn</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>499</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>539</x>
+     <y>142</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

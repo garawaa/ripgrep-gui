@@ -168,6 +168,7 @@ class Ui_Form(object):
 
 
         self.retranslateUi(Form)
+        self.search_string_edit.editingFinished.connect(self.search_btn.click)
 
         QMetaObject.connectSlotsByName(Form)
     # setupUi
