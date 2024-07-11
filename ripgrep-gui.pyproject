@@ -1,0 +1,7 @@
+{
+    "files": [
+        "main.py",
+        "main_form.ui",
+        "ui_main_form.py"
+    ]
+}
