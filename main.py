@@ -67,12 +67,9 @@ class MainWidget(QWidget):
             QAbstractItemView.EditTrigger.NoEditTriggers)
         self.ui.result_table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows)
-
         self.ui.result_table.doubleClicked.connect(self.open_file)
         self.results_ready.connect(self.update_table)
         self.result_queue = queue.Queue()
-
-
     def browse_directory(self):
         initial_dir = self.ui.base_path_edit.text()
         dir_path = QFileDialog.getExistingDirectory(
