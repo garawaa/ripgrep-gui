@@ -237,6 +237,8 @@ class MainWidget(QWidget):
             QMessageBox.information(self, "Copied", f"File path copied to clipboard:\n{file_path}")
 
     def show_context_menu(self, pos):
+        if self.ui.result_table.rowCount()<1:
+            return
         context_menu = QMenu(self)
         open_action = context_menu.addAction("Open with Default Viewer")
         explorer_action = context_menu.addAction("Show in Explorer")
