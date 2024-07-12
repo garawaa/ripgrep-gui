@@ -1,12 +1,13 @@
-import sys
 import os
-import subprocess
-import threading
 import queue
+import subprocess
+import sys
+import threading
 
-from PySide6.QtWidgets import QAbstractItemView, QAbstractScrollArea, QApplication, QHeaderView, QSizePolicy, \
-    QTableWidget, QWidget, QFileDialog, QTableWidgetItem, QMenu, QMessageBox
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QAbstractItemView, QApplication, QWidget, QFileDialog, QTableWidgetItem, QMenu, \
+    QMessageBox
+
 from ui_main_form import Ui_Form
 
 
