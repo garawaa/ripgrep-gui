@@ -26,16 +26,20 @@ class ResultLine:
             self.full_path = self.full_path.replace('/', '\\')
             self.line = split[i]
             i += 1
-            self.contents = split[i]
-            i += 1
-            while i < len(split):
-                self.contents += ':' + split[i]
+            try:
+                self.contents = split[i]
                 i += 1
-
+                while i < len(split):
+                    self.contents += ':' + split[i]
+                    i += 1
+            except:
+                self.contents = ""
+                
             self.file_name = os.path.basename(self.full_path)
             self.path = os.path.dirname(self.full_path)
         else:  # Something Weird...
             self.contents = line
+            self.line = ""
             self.file_name = ""
             self.path = ""
 
