@@ -71,7 +71,7 @@ class MainWidget(QWidget):
             QAbstractItemView.EditTrigger.NoEditTriggers)
         self.ui.result_table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows)
-        self.ui.result_table.doubleClicked.connect(self.open_file)
+        # self.ui.result_table.doubleClicked.connect(self.open_file)
         self.results_ready.connect(self.update_table)
         self.result_queue = queue.Queue()
     def browse_directory(self):
@@ -156,9 +156,8 @@ class MainWidget(QWidget):
                 command,
                 encoding='utf-8',
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True
+                capture_output=True,
+                shell=True
             )
             if result.stdout:
                 self.result_queue.put(result.stdout.splitlines())
