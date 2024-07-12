@@ -3,9 +3,7 @@ import os
 import subprocess
 import threading
 import queue
-from cgitb import text
 
-from PySide6 import QtWidgets
 from PySide6.QtWidgets import QAbstractItemView, QAbstractScrollArea, QApplication, QHeaderView, QSizePolicy, \
     QTableWidget, QWidget, QFileDialog, QTableWidgetItem, QMenu, QMessageBox
 from PySide6.QtCore import Qt, Signal, Slot
