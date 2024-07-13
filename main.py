@@ -197,6 +197,11 @@ class MainWidget(QWidget):
         command = self.generate_command_aslist()
         if command == []:
             return
+        base_path = self.ui.base_path_edit.text()
+        if not os.path.isdir(base_path):
+            QMessageBox.critical(
+                self, "Error", "Base path is not valid.")
+            return
         self.ui.progressBar.setValue(0)
         self.ui.progressBar.setRange(0, 0)
         self.ui.total_label.setText("")
@@ -215,7 +220,18 @@ class MainWidget(QWidget):
             file_path = os.path.join(path, file_name)
             if os.path.exists(file_path):
                 os.startfile(file_path)
-
+    def open_file_with_notepad(self):
+        current_row = self.ui.result_table.currentRow()
+        if current_row > -1:
+            path = self.ui.result_table.item(current_row, 0).text()
+            file_name = self.ui.result_table.item(current_row, 1).text()
+            file_path = os.path.join(path, file_name)
+            if os.path.exists(file_path):
+                subprocess.run(
+                ['notepad', f'{file_path}'],
+                    encoding='utf-8',
+                    shell=True
+                )
     def show_in_explorer(self):
         current_row = self.ui.result_table.currentRow()
         if current_row > -1:
@@ -240,11 +256,14 @@ class MainWidget(QWidget):
             return
         context_menu = QMenu(self)
         open_action = context_menu.addAction("Open with Default Viewer")
+        open_with_np_action = context_menu.addAction("Open with Notepad")
         explorer_action = context_menu.addAction("Show in Explorer")
         copy_action = context_menu.addAction("Copy File Path")
         action = context_menu.exec(self.ui.result_table.mapToGlobal(pos))
         if action == open_action:
             self.open_file()
+        elif action == open_with_np_action:
+            self.open_file_with_notepad()
         elif action == explorer_action:
             self.show_in_explorer()
         elif action == copy_action:
