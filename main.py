@@ -229,8 +229,7 @@ class MainWidget(QWidget):
             if os.path.exists(file_path):
                 subprocess.run(
                 ['notepad', f'{file_path}'],
-                    encoding='utf-8',
-                    shell=True
+                    shell=True,
                 )
     def show_in_explorer(self):
         current_row = self.ui.result_table.currentRow()
